@@ -45,7 +45,7 @@ function Leaderboard() {
     };
 
     try {
-      const res = await fetch("https://leetcode-leaderboard-1.onrender.com", {
+      const res = await fetch("https://leetcode-leaderboard-1.onrender.com/api/leetcode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(query),
