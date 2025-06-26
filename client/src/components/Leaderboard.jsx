@@ -171,7 +171,6 @@ function Leaderboard() {
             </Swiper>
           </div>
         )}
-
         {data.length > 0 && (
           <div className="animate-fadeInUp">
             <h2 className="text-2xl font-bold text-center mb-6">Overall Leaderboard</h2>
