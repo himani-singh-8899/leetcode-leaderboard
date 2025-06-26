@@ -1,4 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
+} from "@mui/material";
+import "./Leaderboard.css";
 
 function Leaderboard() {
   const [roomId] = useState(() => {
@@ -16,13 +23,13 @@ function Leaderboard() {
   });
   const [dailyData, setDailyData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
   const handleAddUser = async () => {
     const name = username.trim();
     if (!name) return;
-
     setLoading(true);
 
     const query = {
@@ -65,15 +72,10 @@ function Leaderboard() {
       const hard = getCount("Hard");
 
       const newUser = {
-        name,
-        problemsSolved,
-        easy,
-        medium,
-        hard,
-        contestRating: rating,
+        name, problemsSolved, easy, medium, hard, contestRating: rating,
       };
 
-      const updated = [...data.filter(u => u.name !== name), newUser].sort(
+      const updated = [...data.filter((u) => u.name !== name), newUser].sort(
         (a, b) => b.problemsSolved - a.problemsSolved
       );
 
@@ -82,7 +84,7 @@ function Leaderboard() {
       const dailyChange = dailyUser ? problemsSolved - dailyUser.initial : 0;
       const updatedDaily = [
         ...prevDaily.filter((u) => u.name !== name),
-        { name, change: dailyChange, initial: problemsSolved },
+        { name, change: dailyChange, initial: dailyUser ? dailyUser.initial : problemsSolved },
       ];
 
       setData(updated);
@@ -108,99 +110,121 @@ function Leaderboard() {
 
   useEffect(() => {
     const savedDaily = localStorage.getItem(`daily-${today}-${roomId}`);
-    if (savedDaily) {
-      setDailyData(JSON.parse(savedDaily));
-    }
+    if (savedDaily) 
+    setDailyData(JSON.parse(savedDaily));
   }, [roomId, today]);
 
   return (
-    <div className="bg-white min-h-screen text-black px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Jeet_ki_tyaari - Room ID: {roomId}</h1>
-        </div>
-
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="Enter your LeetCode username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="border border-gray-300 bg-white text-black p-2 rounded w-full"
-          />
-          <button
-            onClick={handleAddUser}
-            className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Join Room
+    <div className={darkMode ? "bg-dark transition-all" : "bg-light transition-all"}>
+      <div className="max-w-7xl mx-auto p-6 space-y-14">
+      <h1 className="text-4xl font-bold text-center mb-8 text-blue-600">LeetCode Leaderboard</h1>
+        <div className="flex justify-end">
+          <button className="button-primary" onClick={() => setDarkMode(!darkMode)}>
+            Toggle {darkMode ? "Light" : "Dark"} Mode
           </button>
         </div>
 
-        {loading && <p className="text-center text-lg">Loading...</p>}
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="card-colored animate-fadeInUp">
+            <h2 className="text-2xl font-bold">Welcome to Jeet_ki_tyaari</h2>
+            <p className="text-sm mt-2">Room ID: <span className="font-mono">{roomId}</span></p>
+            <p className="text-sm mt-2">Track your LeetCode progress with friends </p>
+          </div>
+          <div className={`card-glass ${darkMode ? "card-dark" : ""}`}>
+            <input
+              type="text"
+              placeholder="Enter LeetCode username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full p-3 rounded border mb-4"
+            />
+            <button onClick={handleAddUser} className="button-primary w-full">
+              Join Room
+            </button>
+            {loading && <p className="mt-2 text-sm">Loading...</p>}
+          </div>
+        </div>
 
         {data.length > 0 && (
-          <>
-            <h2 className="text-xl font-semibold mt-8 mb-2">Overall Leaderboard</h2>
-            <table className="w-full text-left text-sm mt-2 mb-8">
-              <thead className="text-gray-600 border-b border-gray-300">
-                <tr>
-                  <th className="py-2">Rank</th>
-                  <th>Name</th>
-                  <th>Total</th>
-                  <th className="text-green-600">Easy</th>
-                  <th className="text-yellow-600">Medium</th>
-                  <th className="text-red-600">Hard</th>
-                  <th>Rating</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((user, index) => (
-                  <tr key={index} className="border-b border-gray-200">
-                    <td className="py-3">{index + 1}</td>
-                    <td className="font-medium text-blue-600">{user.name}</td>
-                    <td>{user.problemsSolved}</td>
-                    <td className="text-green-600">{user.easy}</td>
-                    <td className="text-yellow-600">{user.medium}</td>
-                    <td className="text-red-600">{user.hard}</td>
-                    <td>{user.contestRating}</td>
-                    <td>
-                      <button
-                        onClick={() => handleDelete(user.name)}
-                        className="text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
+          <div className="animate-fadeInUp">
+            <h2 className="text-2xl font-bold text-center mb-6">Top 3 Performers</h2>
+            <Swiper slidesPerView="auto" spaceBetween={20} grabCursor centeredSlides className="pb-10">
+              <AnimatePresence>
+                {data.slice(0, 3).map((user, index) => (
+                  <SwiperSlide key={user.name} className="w-72 p-2 swiper-slide">
+                    <motion.div whileHover={{ scale: 1.05 }} className="card-glass">
+                      <div className="bg-white text-center">
+                        <h3 className="text-xl font-bold">{user.name}</h3>
+                        <p className="text-sm">
+                          Rank: #{index + 1} {['🥇', '🥈', '🥉'][index]}
+                        </p>
+                      </div>
+                      <div className="text-sm mt-3 space-y-1">
+                        <div>Total Solved: <strong>{user.problemsSolved}</strong></div>
+                        <div>Easy: {user.easy} | Medium: {user.medium} | Hard: {user.hard}</div>
+                        <div>Rating: {user.contestRating}</div>
+                      </div>
+                    </motion.div>
+                  </SwiperSlide>
                 ))}
-              </tbody>
-            </table>
+              </AnimatePresence>
+            </Swiper>
+          </div>
+        )}
 
-            {dailyData.length > 0 && (
-              <>
-                <h2 className="text-xl font-semibold mt-8 mb-2">Today's Progress Leaderboard</h2>
-                <table className="w-full text-left text-sm mt-2">
-                  <thead className="text-gray-600 border-b border-gray-300">
-                    <tr>
-                      <th className="py-2">Rank</th>
-                      <th>Name</th>
-                      <th>Problems Solved Today</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dailyData.map((user, index) => (
-                      <tr key={index} className="border-b border-gray-200">
-                        <td className="py-3">{index + 1}</td>
-                        <td className="font-medium text-blue-600">{user.name}</td>
-                        <td>{user.change}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
-          </>
+        {data.length > 0 && (
+          <div className="animate-fadeInUp">
+            <h2 className="text-2xl font-bold text-center mb-6">Overall Leaderboard</h2>
+            <TableContainer component={Paper} className="table-container">
+              <Table>
+                <TableHead>
+                  <TableRow className={darkMode ? "table-head-dark" : "table-head"}>
+                    <TableCell>Rank</TableCell><TableCell>Name</TableCell><TableCell>Total</TableCell>
+                    <TableCell>Easy</TableCell><TableCell>Medium</TableCell>
+                    <TableCell>Hard</TableCell><TableCell>Rating</TableCell><TableCell>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.map((user, index) => (
+                    <TableRow key={user.name}>
+                      <TableCell>{index + 1}</TableCell><TableCell>{user.name}</TableCell>
+                      <TableCell>{user.problemsSolved}</TableCell><TableCell>{user.easy}</TableCell>
+                      <TableCell>{user.medium}</TableCell><TableCell>{user.hard}</TableCell>
+                      <TableCell>{user.contestRating}</TableCell>
+                      <TableCell>
+                        <button className="button-danger" onClick={() => handleDelete(user.name)}>
+                          Delete
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
+        )}
+
+        {dailyData.length > 0 && (
+          <div className="animate-fadeInUp">
+            <h2 className="text-2xl font-bold text-center mb-6">Today's Progress Leaderboard</h2>
+            <TableContainer component={Paper} className="table-container">
+              <Table>
+                <TableHead>
+                  <TableRow className={darkMode ? "table-head-dark" : "table-head"}>
+                    <TableCell>Rank</TableCell><TableCell>Name</TableCell><TableCell>Problems Solved Today</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {dailyData.map((user, index) => (
+                    <TableRow key={user.name}>
+                      <TableCell>{index + 1}</TableCell><TableCell>{user.name}</TableCell>
+                      <TableCell>{user.change}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
         )}
       </div>
     </div>
